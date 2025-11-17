@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support Assistant</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        width: 100vw;
+      }
+      body {
+        height: 100vh;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        min-height: 100vh;
+        width: 100vw;
+        margin: 0;
+      }
+      .dashboard-container {
+        background: white;
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+        display: flex;
+        flex-direction: row;
+        overflow: hidden;
+        min-width: 0;
+        min-height: 0;
+      }
+      .sidebar {
+        width: 140px;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 30px;
+        gap: 16px;
+        border-right: 1px solid #e2e8f0;
+        min-width: 140px;
+      }
+      .sidebar .logo {
+        margin-bottom: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+      .sidebar button {
+        background: none;
+        border: none;
+        font-size: 14px;
+        color: #64748b;
+        cursor: pointer;
+        width: 90%;
+        padding: 12px 8px;
+        border-radius: 8px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s ease;
+      }
+      .sidebar button:hover {
+        background: #f1f5f9;
+        color: #475569;
+      }
+      .sidebar button.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+      .sidebar .icon {
+        font-size: 18px;
+      }
+      .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 0 24px;
+        padding-top: 30px;
+        min-width: 0;
+        min-height: 0;
+      }
+      .chat-header {
+        font-weight: 600;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        color: #1e293b;
+      }
+      .session-controls {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .session-controls button {
+        padding: 8px 16px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+      }
+      .session-controls button:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+      .session-controls button.primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-color: transparent;
+      }
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-right: 8px;
+        scroll-behavior: smooth;
+        min-height: 0;
+        margin-bottom: 16px;
+      }
+      .message {
+        display: flex;
+        animation: fadeIn 0.3s ease-in;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .message.user {
+        justify-content: flex-end;
+      }
+      .message.bot {
+        justify-content: flex-start;
+      }
+      .bubble {
+        padding: 16px 20px;
+        border-radius: 18px;
+        max-width: 75%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        font-size: 15px;
+        line-height: 1.5;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .user .bubble {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-bottom-right-radius: 6px;
+      }
+      .bot .bubble {
+        background: #f8fafc;
+        color: #334155;
+        border-bottom-left-radius: 6px;
+        border: 1px solid #e2e8f0;
+      }
+      .show-more {
+        color: #667eea;
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: 500;
+        margin-left: 4px;
+      }
+      .show-more:hover {
+        color: #5a67d8;
+      }
+      .ticket-prompt {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 8px;
+        font-size: 14px;
+      }
+      .ticket-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .ticket-buttons button {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s ease;
+      }
+      .btn-yes {
+        background: #10b981;
+        color: white;
+      }
+      .btn-yes:hover {
+        background: #059669;
+      }
+      .btn-no {
+        background: #6b7280;
+        color: white;
+      }
+      .btn-no:hover {
+        background: #4b5563;
+      }
+      .chat-input {
+        display: flex;
+        align-items: center;
+        margin: 20px 0;
+        gap: 12px;
+      }
+      .chat-input input {
+        flex: 1;
+        border: 1px solid #e2e8f0;
+        outline: none;
+        padding: 14px 20px;
+        border-radius: 24px;
+        background: white;
+        font-size: 15px;
+        transition: all 0.2s ease;
+      }
+      .chat-input input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+      .chat-input button {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        color: white;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        transition: all 0.2s ease;
+      }
+      .chat-input button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+      }
+      .chat-input button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .footer {
+        text-align: center;
+        font-size: 14px;
+        color: #64748b;
+        padding: 8px 0;
+        margin-top: 8px;
+      }
+      .stats-panel {
+        width: 200px;
+        background: #f8fafc;
+        padding: 30px 20px;
+        border-left: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        font-size: 14px;
+        min-width: 200px;
+      }
+      .stat-item {
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+      .stat-label {
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 4px;
+      }
+      .stat-value {
+        font-weight: 600;
+        font-size: 20px;
+        color: #1e293b;
+      }
+      .typing-indicator {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        font-style: italic;
+        margin: 8px 0;
+      }
+      .typing-dots {
+        display: flex;
+        gap: 2px;
+      }
+      .typing-dots span {
+        width: 4px;
+        height: 4px;
+        background: #64748b;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+      }
+      .typing-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .typing-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes typing {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+        }
+        30% {
+          transform: translateY(-10px);
+        }
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+      }
+      .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      }
+      .modal h3 {
+        margin: 0 0 16px 0;
+        color: #1e293b;
+      }
+      .form-group {
+        margin-bottom: 16px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+        color: #374151;
+      }
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      .form-group textarea {
+        height: 80px;
+        resize: vertical;
+      }
+      .modal-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 20px;
+      }
+      .modal-buttons button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .btn-cancel {
+        background: #6b7280;
+        color: white;
+      }
+      .btn-submit {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+      @media (max-width: 900px) {
+        .dashboard-container {
+          flex-direction: column;
+        }
+        .chat-main,
+        .sidebar,
+        .stats-panel {
+          width: 100vw;
+        }
+        .sidebar,
+        .stats-panel {
+          flex-direction: row;
+          min-width: 0;
+          padding: 12px;
+          height: auto;
+        }
+        .sidebar {
+          width: 100%;
+          justify-content: center;
+        }
+        .stats-panel {
+          gap: 16px;
+        }
+        .chat-main {
+          padding: 0 16px;
+        }
+        .chat-header {
+          font-size: 20px;
+        }
+        .bubble {
+          font-size: 14px;
+          max-width: 85%;
+        }
+        .stat-value {
+          font-size: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <div class="sidebar">
+        <div class="logo">🛠️</div>
+        <button class="active" onclick="switchTab('chat')">
+          <span class="icon">💬</span>
+          <span>Chat</span>
+        </button>
+        <button onclick="switchTab('tickets')">
+          <span class="icon">🎫</span>
+          <span>Tickets</span>
+        </button>
+        <button onclick="switchTab('history')">
+          <span class="icon">📋</span>
+          <span>History</span>
+        </button>
+        <button onclick="switchTab('settings')">
+          <span class="icon">⚙️</span>
+          <span>Settings</span>
+        </button>
+      </div>
+
+      <div class="chat-main">
+        <div class="chat-header">🛠️ Support Assistant</div>
+
+        <div class="session-controls">
+          <button onclick="loadSession()" title="Load Previous Session">
+            📂 Load Session
+          </button>
+          <button
+            onclick="newSession()"
+            class="primary"
+            title="Start New Session"
+          >
+            🆕 New Session
+          </button>
+          <button onclick="saveSession()" title="Save Current Session">
+            💾 Save Session
+          </button>
+        </div>
+
+        <div class="chat-messages" id="messages"></div>
+
+        <div class="typing-indicator" id="typing">
+          <span>Assistant is typing</span>
+          <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+
+        <div class="chat-input">
+          <input
+            id="user-input"
+            type="text"
+            placeholder="Describe your issue here..."
+            onkeypress="handleKeyPress(event)"
+          />
+          <button onclick="sendMessage()" id="send-btn">➤</button>
+        </div>
+
+        <div class="footer">Support System • Powered by AI</div>
+      </div>
+
+      <div class="stats-panel">
+        <div class="stat-item">
+          <div class="stat-label">Session Queries</div>
+          <div id="query-count" class="stat-value">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Avg Response</div>
+          <div id="resp-time" class="stat-value">0.0s</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Session ID</div>
+          <div id="session-id" class="stat-value">New</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Tickets</div>
+          <div id="ticket-count" class="stat-value">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ticket Creation Modal -->
+    <div id="ticket-modal" class="modal">
+      <div class="modal-content">
+        <h3>Create Support Ticket</h3>
+        <form id="ticket-form">
+          <div class="form-group">
+            <label for="user-name">Your Name:</label>
+            <input type="text" id="user-name" required />
+          </div>
+          <div class="form-group">
+            <label for="user-email">Email:</label>
+            <input type="email" id="user-email" required />
+          </div>
+          <div class="form-group">
+            <label for="issue-type">Issue Type:</label>
+            <select id="issue-type" required>
+              <option value="">Select type...</option>
+              <option value="IT Support">IT Support</option>
+              <option value="E-Banking">E-Banking</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="issue-description">Description:</label>
+            <textarea
+              id="issue-description"
+              placeholder="Describe your issue in detail..."
+              required
+            ></textarea>
+          </div>
+          <div class="modal-buttons">
+            <button
+              type="button"
+              class="btn-cancel"
+              onclick="closeTicketModal()"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-submit">Create Ticket</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Configuration
+      const API_URL = "http://127.0.0.1:8000";
+      let currentSessionId = null;
+      let queryCount = 0;
+      let totalResponseTime = 0;
+      let awaitingTicketResponse = false;
+      let lastBotMessage = null;
+
+      // Initialize application
+      document.addEventListener("DOMContentLoaded", () => {
+        initializeSession();
+        loadTicketCount();
+      });
+
+      function initializeSession() {
+        currentSessionId = generateSessionId();
+        document.getElementById("session-id").textContent =
+          currentSessionId.slice(0, 8);
+        appendMessage(
+          "bot",
+          "👋 Hello! I'm your Assistant. I can help you with:\n\n• Technical issues\n• E-Banking problems\n• General IT support\n• Password resets\n• System errors\n\nWhat can I help you with today?"
+        );
+      }
+
+      function generateSessionId() {
+        return (
+          "session_" +
+          Date.now() +
+          "_" +
+          Math.random().toString(36).substr(2, 9)
+        );
+      }
+
+      function appendMessage(sender, text, showTicketPrompt = false) {
+        const messagesDiv = document.getElementById("messages");
+        const msg = document.createElement("div");
+        msg.className = "message " + sender;
+
+        let displayText = text;
+        let fullText = text;
+
+        // Handle long messages with "Show more" functionality
+
+        let bubbleContent = `<div class="bubble">${displayText}</div>`;
+
+        // Add ticket prompt if needed
+        if (showTicketPrompt && sender === "bot") {
+          bubbleContent += `
+          <div class="ticket-prompt">
+            <strong>Was this solution helpful?</strong><br>
+            If you need further assistance, I can create a support ticket for you.
+            <div class="ticket-buttons">
+              <button class="btn-yes" onclick="handleTicketResponse(true)">Create Ticket</button>
+              <button class="btn-no" onclick="handleTicketResponse(false)">No, Thanks</button>
+            </div>
+          </div>
+        `;
+        }
+
+        msg.innerHTML = bubbleContent;
+        messagesDiv.appendChild(msg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        if (sender === "bot") {
+          lastBotMessage = text;
+        }
+      }
+      function expandMessage(element, fullText, shortText) {
+        const bubble = element.closest(".bubble");
+
+        if (element.dataset.expanded === "true") {
+          // Collapse back
+          bubble.innerHTML = `${shortText}... <span class="show-more" 
+      onclick="expandMessage(this, \`${fullText.replace(
+        /`/g,
+        "\\`"
+      )}\`, \`${shortText.replace(/`/g, "\\`")}\`)" 
+      data-expanded="false">Show more</span>`;
+        } else {
+          // Expand
+          bubble.innerHTML = `${fullText} <span class="show-more" 
+      onclick="expandMessage(this, \`${fullText.replace(
+        /`/g,
+        "\\`"
+      )}\`, \`${shortText.replace(/`/g, "\\`")}\`)" 
+      data-expanded="true">Show less</span>`;
+        }
+      }
+
+      function showTyping() {
+        document.getElementById("typing").style.display = "flex";
+      }
+
+      function hideTyping() {
+        document.getElementById("typing").style.display = "none";
+      }
+
+      async function sendMessage() {
+        const input = document.getElementById("user-input");
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Disable input during processing
+        const sendBtn = document.getElementById("send-btn");
+        sendBtn.disabled = true;
+        input.disabled = true;
+
+        appendMessage("user", text);
+        input.value = "";
+
+        showTyping();
+
+        try {
+          const start = Date.now();
+          const response = await fetch(`${API_URL}/chat`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Session-ID": currentSessionId,
+            },
+            body: JSON.stringify({
+              message: text,
+              session_id: currentSessionId,
+            }),
+          });
+
+          const data = await response.json();
+          const responseTime = (Date.now() - start) / 1000;
+
+          hideTyping();
+
+          // Determine if we should show ticket prompt
+          const shouldShowTicket =
+            data.category &&
+            (data.category === "IT Support" || data.category === "E-Banking") &&
+            !awaitingTicketResponse;
+
+          appendMessage(
+            "bot",
+            data.response || "⚠️ No response from server",
+            shouldShowTicket
+          );
+
+          if (shouldShowTicket) {
+            awaitingTicketResponse = true;
+          }
+
+          // Update statistics
+          queryCount++;
+          totalResponseTime += responseTime;
+          document.getElementById("query-count").textContent = queryCount;
+          document.getElementById("resp-time").textContent =
+            (totalResponseTime / queryCount).toFixed(1) + "s";
+        } catch (err) {
+          hideTyping();
+          appendMessage(
+            "bot",
+            "⚠️ Error: Could not connect to server. Please check if the backend is running."
+          );
+          console.error(err);
+        } finally {
+          // Re-enable input
+          sendBtn.disabled = false;
+          input.disabled = false;
+          input.focus();
+        }
+      }
+
+      function handleTicketResponse(createTicket) {
+        awaitingTicketResponse = false;
+
+        if (createTicket) {
+          openTicketModal();
+        } else {
+          appendMessage(
+            "bot",
+            "No problem! Feel free to ask if you have any other questions. I'm here to help! 😊"
+          );
+        }
+      }
+
+      function openTicketModal() {
+        document.getElementById("ticket-modal").style.display = "block";
+
+        // Pre-fill issue description with the last bot response
+        if (lastBotMessage) {
+          document.getElementById(
+            "issue-description"
+          ).value = `Previous conversation context:\n\n${lastBotMessage}\n\n---\n\nAdditional details:\n`;
+        }
+      }
+
+      function closeTicketModal() {
+        document.getElementById("ticket-modal").style.display = "none";
+        document.getElementById("ticket-form").reset();
+      }
+
+      // Handle ticket form submission
+      document
+        .getElementById("ticket-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const formData = {
+            user: document.getElementById("user-name").value,
+            email: document.getElementById("user-email").value,
+            type: document.getElementById("issue-type").value,
+            description: document.getElementById("issue-description").value,
+            session_id: currentSessionId,
+            timestamp: new Date().toISOString(),
+          };
+
+          try {
+            const response = await fetch(`${API_URL}/ticket`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formData),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+              closeTicketModal();
+              appendMessage(
+                "bot",
+                `✅ Support ticket created successfully!\n\nTicket ID: ${result.ticket.id}\nType: ${formData.type}\n\nOur support team will contact you at ${formData.email} within 24 hours. Thank you!`
+              );
+              loadTicketCount(); // Refresh ticket count
+            } else {
+              alert("Error creating ticket. Please try again.");
+            }
+          } catch (err) {
+            console.error("Ticket creation error:", err);
+            alert("Error creating ticket. Please check your connection.");
+          }
+        });
+
+      async function loadTicketCount() {
+        try {
+          const response = await fetch(`${API_URL}/tickets`);
+          const data = await response.json();
+          document.getElementById("ticket-count").textContent =
+            data.tickets.length;
+        } catch (err) {
+          console.error("Error loading ticket count:", err);
+        }
+      }
+
+      function handleKeyPress(event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendMessage();
+        }
+      }
+
+      // Session management functions
+      function newSession() {
+        if (confirm("Start a new session? Current chat will be cleared.")) {
+          document.getElementById("messages").innerHTML = "";
+          queryCount = 0;
+          totalResponseTime = 0;
+          awaitingTicketResponse = false;
+          lastBotMessage = null;
+          document.getElementById("query-count").textContent = "0";
+          document.getElementById("resp-time").textContent = "0.0s";
+          initializeSession();
+        }
+      }
+
+      function saveSession() {
+        const sessionData = {
+          id: currentSessionId,
+          messages: Array.from(document.querySelectorAll(".message")).map(
+            (msg) => ({
+              sender: msg.classList.contains("user") ? "user" : "bot",
+              content: msg.querySelector(".bubble").textContent,
+            })
+          ),
+          stats: {
+            queryCount,
+            totalResponseTime,
+          },
+          timestamp: new Date().toISOString(),
+        };
+
+        localStorage.setItem(
+          `session_${currentSessionId}`,
+          JSON.stringify(sessionData)
+        );
+        alert("Session saved successfully!");
+      }
+
+      function loadSession() {
+        const sessions = Object.keys(localStorage).filter((key) =>
+          key.startsWith("session_")
+        );
+
+        if (sessions.length === 0) {
+          alert("No saved sessions found.");
+          return;
+        }
+
+        const sessionList = sessions
+          .map((key) => {
+            const data = JSON.parse(localStorage.getItem(key));
+            return `${data.id.slice(0, 12)} - ${new Date(
+              data.timestamp
+            ).toLocaleString()}`;
+          })
+          .join("\n");
+
+        const selectedIndex = prompt(
+          `Select a session to load:\n\n${sessionList}\n\nEnter the number (1-${sessions.length}):`
+        );
+
+        if (
+          selectedIndex &&
+          selectedIndex >= 1 &&
+          selectedIndex <= sessions.length
+        ) {
+          const sessionKey = sessions[selectedIndex - 1];
+          const sessionData = JSON.parse(localStorage.getItem(sessionKey));
+
+          // Clear current messages
+          document.getElementById("messages").innerHTML = "";
+
+          // Load session data
+          currentSessionId = sessionData.id;
+          queryCount = sessionData.stats.queryCount;
+          totalResponseTime = sessionData.stats.totalResponseTime;
+
+          // Restore messages
+          sessionData.messages.forEach((msg) => {
+            appendMessage(msg.sender, msg.content);
+          });
+
+          // Update UI
+          document.getElementById("session-id").textContent =
+            currentSessionId.slice(0, 8);
+          document.getElementById("query-count").textContent = queryCount;
+          document.getElementById("resp-time").textContent =
+            queryCount > 0
+              ? (totalResponseTime / queryCount).toFixed(1) + "s"
+              : "0.0s";
+
+          alert("Session loaded successfully!");
+        }
+      }
+
+      // Tab switching (placeholder for future features)
+      function switchTab(tab) {
+        // Remove active class from all buttons
+        document
+          .querySelectorAll(".sidebar button")
+          .forEach((btn) => btn.classList.remove("active"));
+
+        // Add active class to clicked button
+        event.target.classList.add("active");
+
+        // For now, only chat is implemented
+        if (tab !== "chat") {
+          alert(
+            `${tab.charAt(0).toUpperCase() + tab.slice(1)} feature coming soon!`
+          );
+          // Reset to chat tab
+          document.querySelector(".sidebar button").classList.add("active");
+          event.target.classList.remove("active");
+        }
+      }
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("ticket-modal");
+        if (event.target === modal) {
+          closeTicketModal();
+        }
+      };
+    </script>
+  </body>
+</html>
